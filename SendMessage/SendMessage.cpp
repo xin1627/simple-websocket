@@ -3,23 +3,43 @@
 
 #include <iostream>
 #include <afxwin.h>
+#include <fstream>
+#include <sstream>
+#include <chrono>
 
 int main()
 {
-    CWnd* pWnd = CWnd::FindWindow(_T("Afx:00007FF6257B0000:8:0000000000010003:0000000000000000:00000000041C10FD"), NULL);
-    auto hwnd = pWnd->m_hWnd;
+	auto  start = std::chrono::high_resolution_clock::now();
 
-    LRESULT res = pWnd->SendMessage(40100, 41001, NULL);
-    std::cout << res;
+	std::fstream file;
+	file.open("d:\\1.1.2.Õý¶à±ßÐÎ.json", std::ofstream::in);
+
+	if (!file.is_open())
+	{
+		std::cout << "json file error!";
+	}
+
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	std::string contents(buffer.str());
+	CString jsonStr(contents.c_str());
+
+	std::string STDStr(CW2A(jsonStr.GetString()));
+
+	CString strMapName(_T("CubeHandleMemory"));  // Share Memory Name
+	LPVOID pBuf;                         // Share Memory Pointer
+	HANDLE hMap = ::OpenFileMapping(FILE_MAP_ALL_ACCESS, 0, (LPCTSTR)strMapName);
+	HWND hWnd;
+	if (NULL != hMap)
+	{
+		pBuf = ::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+		CString str((TCHAR*)pBuf);
+		hWnd = (HWND)_ttoi(str);
+		::SendMessage(hWnd, WM_SETTEXT, 40100, (LPARAM)(LPCTSTR)jsonStr);
+		LRESULT res = ::SendMessage(hWnd, 40100, 41001, 1001);
+
+		auto  end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> diff = end - start;
+		std::cout << "total time:" << diff.count() * 1000 << "ms" << std::endl;
+	}
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
